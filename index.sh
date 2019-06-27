@@ -1,33 +1,43 @@
 #!/bin/bash
 arg=$1
 arg2=$2
+arg3=$3
 path=""
 execute_when_starts=""
 remove_complete=0
 aux_path=""
 aux_execute=""
-remove_type=0
 
 source config
 
 store_config_file() {
     touch config
-    echo "path=\"$aux_path"\" >config
-    echo "execute_when_starts=\"$execute_when_starts"\" >>config
+    echo "execute_when_starts=\"$execute_when_starts"\" >config
     echo "remove_type=\"$remove_type"\" >>config
 }
 
-if [ "$arg" = "--help" ]; then
-    echo " --set: Set the docker-compose path"
-elif [ "$arg" = "--set" ]; then
-    if [ "$arg2" != "" ]; then
-        path="$arg2"
+exec_clean(){
+    if [ "$arg" = "--all" ]; then        
+     echo "Removing containers, images, volumes and pulling.."
+     docker rm $(docker ps -qa)
+     docker rmi $(docker images -qa)
+     docker-compose -f "$path"/docker-compose.yml pull
+     docker-compose -f "$path"/docker-compose.yml up -d
     else
-        echo " Missing path."
+        echo "Pruning.."
+        docker system prune -f
     fi
+}
+
+run_script()
+{
+if [ "$arg" = "--help" ]; then
+    echo -e "\n --all _path_:\tWill remove all docker containers, images, volumes and will pull new images"
+    echo -e " --config:\tSet configurations\n" 
+    exit
 elif [ "$arg" = "--config" ]; then
-    read -p ' Set docker_compose file path: ' aux_path
-    path="$aux_path"
+    remove_type=0
+    aux_execute=""
     while [ "$aux_execute" != "yes" -a "$aux_execute" != "y" -a "$aux_execute" != "n" -a "$aux_execute" != "no" ]; do
         read -p ' I want it executes when my computer starts (y/n): ' aux_execute
     done
@@ -37,15 +47,15 @@ elif [ "$arg" = "--config" ]; then
     done
     execute_when_starts="$aux_execute"
     store_config_file
-elif [ "$arg2" = "" ]; then
-    echo " Missing path. dc-clean --help"
+    exit
+elif [ "$arg" = "--all" ]; then
+    if [ "$arg2" = "" ]; then
+        echo " missing docker compose path."
+        exit
+    fi
 fi
+}
 
-if [ "$path" != "" ]; then
-    echo "$path"
-    #docker system prune - f
-    #docker rm $(docker ps -qa)
-    ##docker rmi $(docker images -qa)
-    #"$path" docker-compose pull
-    #"$path" docker-compose up -d
-fi
+run_script
+exec_clean
+

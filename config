@@ -1,3 +1,2 @@
-path="a"
-execute_when_starts="y"
-remove_type="1"
+execute_when_starts="n"
+remove_type="2"
